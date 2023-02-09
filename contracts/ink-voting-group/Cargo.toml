@@ -12,12 +12,14 @@ keywords      = ["blockchain", "polkadot", "ink"]
 crate-type = ["cdylib"]
 
 [dependencies]
-ink        = { git = "https://github.com/paritytech/ink", rev = "4655a8b4413cb50cbc38d1b7c173ad426ab06cde", default-features = false }
+ink        = { version = "4.0.0-rc", default-features = false }
 scale      = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 scale-info = { version = "2.3", default-features = false, features = ["derive"], optional = true }
-openbrush  = { git = "https://github.com/727-Ventures/openbrush-contracts/", tag = "3.0.0-beta", default-features = false, features = ["psp22", "ownable"] }
 ink-group  = { path = "../../traits/ink-group/", default-features = false }
 thiserror-no-std = { version = "2.0.2" }
+
+[dev-dependecies]
+ink_e2e = { package = "ink_e2e", git = "https://github.com/paritytech/ink" } 
 
 [features]
 default = ["std"]
@@ -25,7 +27,8 @@ std = [
     "ink/std",
     "scale/std",
     "scale-info/std",
-    "openbrush/std",
     "ink-group/std"
 ]
 ink-as-dependency = []
+
+e2e-tests = []
