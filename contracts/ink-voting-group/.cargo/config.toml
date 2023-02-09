@@ -1,0 +1,5 @@
+[alias]
+wasm = "contract build --release"
+wasm-debug = "contract build"
+unit-test = "test --lib"
+schema = "run --example schema"
