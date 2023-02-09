@@ -8,9 +8,22 @@ repository    = "https://github.com/alessandro-baldassarre/builDao"
 documentation = "https://github.com/alessandro-baldassarre/builDao#readme"
 keywords      = ["blockchain", "polkadot", "ink"]
 
+[lib]
+crate-type = ["rlib"]
+
 [dependencies]
 ink        = { git = "https://github.com/paritytech/ink", rev = "4655a8b4413cb50cbc38d1b7c173ad426ab06cde", default-features = false }
 scale      = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 scale-info = { version = "2.3", default-features = false, features = ["derive"], optional = true }
 openbrush  = { git = "https://github.com/727-Ventures/openbrush-contracts/", tag = "3.0.0-beta", default-features = false }
+thiserror-no-std = { version = "2.0.2"}
+
+[features]
+default = ["std"]
+std = [
+    "ink/std",
+    "scale/std",
+    "scale-info/std",
+    "openbrush/std",
+]
 
