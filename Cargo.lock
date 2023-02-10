@@ -1389,7 +1389,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "ink-voting-group"
+name = "ink-group-simple"
 version = "0.1.0"
 dependencies = [
  "ink",
