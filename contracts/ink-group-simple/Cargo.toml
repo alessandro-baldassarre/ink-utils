@@ -1,5 +1,5 @@
 [package]
-name          = "ink-voting-group"
+name          = "ink-group-simple"
 version       = "0.1.0"
 authors       = ["Alessandro Baldassarre <alessandro.baldassarre.dev@gmail.com>"]
 edition       = "2021"

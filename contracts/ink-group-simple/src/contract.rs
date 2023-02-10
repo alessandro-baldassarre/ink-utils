@@ -6,16 +6,51 @@ mod contract {
 
     use crate::{ensure, error::ContractError, helpers::validate_unique_members};
 
+    /// Emitted when a member is added to the group
+    #[ink(event)]
+    pub struct MemberAddition {
+        /// The member that was added.
+        #[ink(topic)]
+        member: AccountId,
+    }
+
+    /// Emitted when a member is removed to the group
+    #[ink(event)]
+    pub struct MemberRemoval {
+        /// The member that was removed.
+        #[ink(topic)]
+        member: AccountId,
+    }
+
+    /// Emitted when a member is updated
+    #[ink(event)]
+    pub struct MemberUpdate {
+        /// The member that was updated.
+        #[ink(topic)]
+        member: AccountId,
+    }
+
+    /// Emitted when the admin is updated
+    #[ink(event)]
+    pub struct AdminUpdate {
+        /// The old admin.
+        #[ink(topic)]
+        old_admin: AccountId,
+        /// The new admin.
+        #[ink(topic)]
+        new_admin: AccountId,
+    }
+
     #[ink(storage)]
     #[derive(Default)]
-    pub struct InkVotingGroup {
+    pub struct InkGroupSimple {
         /// admin of the group (can perform any action)
         admin: Lazy<AccountId>,
         total_voting_power: u64,
         members: Vec<Member>,
     }
 
-    impl InkVotingGroup {
+    impl InkGroupSimple {
         #[ink(constructor)]
         /// Construct the contract with optional address (if not set caller address is set) for the
         /// admin and the initial members
@@ -38,6 +73,10 @@ mod contract {
                 .into_iter()
                 .map(|member| {
                     instance.members.push(member);
+                    // Emit the event that the member was added
+                    Self::env().emit_event(MemberAddition {
+                        member: member.addr,
+                    });
                     member.weight
                 })
                 .sum();
@@ -47,7 +86,7 @@ mod contract {
         }
     }
 
-    impl InkGroup for InkVotingGroup {
+    impl InkGroup for InkGroupSimple {
         #[ink(message)]
         /// Return current admin.
         fn get_admin(&self) -> Result<AccountId, InkGroupError> {
@@ -93,6 +132,11 @@ mod contract {
             let admin = self.get_admin()?;
             ensure!(caller == admin, InkGroupError::Unauthorized {});
             self.admin.set(&new_admin);
+            // Emit event that the admin was updated
+            self.env().emit_event(AdminUpdate {
+                old_admin: admin,
+                new_admin,
+            });
             Ok(())
         }
 
@@ -121,9 +165,17 @@ mod contract {
                     self.total_voting_power += member.weight;
                     // last change the old vote weight of the member to the new
                     self.members[index].weight = member.weight;
+                    // Emit event that the member was updated
+                    self.env().emit_event(MemberUpdate {
+                        member: self.members[index].addr,
+                    })
                 } else {
                     // add the new member and then add the vote weight to the total
                     self.members.push(member);
+                    // Emit the event that the member was added
+                    self.env().emit_event(MemberAddition {
+                        member: member.addr,
+                    });
                     self.total_voting_power += member.weight;
                 }
             }
@@ -137,7 +189,12 @@ mod contract {
                     .position(|&old_member| old_member.addr == member)
                 {
                     self.total_voting_power -= self.members[index].weight;
+                    let removed_member_addr = self.members[index].addr;
                     self.members.remove(index);
+                    // Emit the event that the member was removed
+                    self.env().emit_event(MemberRemoval {
+                        member: removed_member_addr,
+                    });
                 }
             }
 
@@ -160,7 +217,7 @@ mod contract {
             ink::env::test::set_caller::<Environment>(sender);
         }
 
-        fn build_contract() -> InkVotingGroup {
+        fn build_contract() -> InkGroupSimple {
             let accounts = default_accounts();
 
             let alice_member = Member {
@@ -176,7 +233,7 @@ mod contract {
 
             set_caller(alice_member.addr);
 
-            InkVotingGroup::try_new(None, members).unwrap()
+            InkGroupSimple::try_new(None, members).unwrap()
         }
 
         #[ink::test]
@@ -210,7 +267,7 @@ mod contract {
         fn get_admin_works() {
             let accounts = default_accounts();
             let contract = build_contract();
-            let response = InkVotingGroup::get_admin(&contract).unwrap();
+            let response = InkGroupSimple::get_admin(&contract).unwrap();
             assert_eq!(response, accounts.alice);
         }
 
@@ -232,7 +289,7 @@ mod contract {
             };
             let members = vec![alice_member, bob_member];
             let contract = build_contract();
-            let response = InkVotingGroup::get_members(&contract).unwrap();
+            let response = InkGroupSimple::get_members(&contract).unwrap();
             assert_eq!(response, members);
             assert!(!response.contains(&charlie_member));
         }
@@ -246,9 +303,9 @@ mod contract {
                 weight: 1,
             };
             let contract = build_contract();
-            let response = InkVotingGroup::get_member(&contract, accounts.alice).unwrap();
+            let response = InkGroupSimple::get_member(&contract, accounts.alice).unwrap();
             assert_eq!(response, alice_member);
-            let err_response = InkVotingGroup::get_member(&contract, accounts.eve).unwrap_err();
+            let err_response = InkGroupSimple::get_member(&contract, accounts.eve).unwrap_err();
             assert_eq!(err_response, InkGroupError::NoMember {});
         }
 
@@ -256,7 +313,7 @@ mod contract {
         /// Get total voting power
         fn get_total_weight_works() {
             let contract = build_contract();
-            let response = InkVotingGroup::get_total_weight(&contract);
+            let response = InkGroupSimple::get_total_weight(&contract);
             assert_eq!(response, 2);
         }
 
@@ -267,10 +324,10 @@ mod contract {
             let mut contract = build_contract();
             set_caller(accounts.bob);
             let err_response =
-                InkVotingGroup::update_admin(&mut contract, accounts.bob).unwrap_err();
+                InkGroupSimple::update_admin(&mut contract, accounts.bob).unwrap_err();
             assert_eq!(err_response, InkGroupError::Unauthorized {});
             set_caller(accounts.alice);
-            InkVotingGroup::update_admin(&mut contract, accounts.bob).unwrap();
+            InkGroupSimple::update_admin(&mut contract, accounts.bob).unwrap();
             assert_eq!(contract.admin.get().unwrap(), accounts.bob);
         }
 
@@ -281,7 +338,7 @@ mod contract {
             let mut contract = build_contract();
             set_caller(accounts.bob);
             let err_response =
-                InkVotingGroup::update_admin(&mut contract, accounts.bob).unwrap_err();
+                InkGroupSimple::update_admin(&mut contract, accounts.bob).unwrap_err();
             assert_eq!(err_response, InkGroupError::Unauthorized {});
             set_caller(accounts.alice);
             let update_alice = Member {
@@ -296,23 +353,23 @@ mod contract {
                 addr: accounts.charlie,
                 weight: 1,
             };
-            InkVotingGroup::update_members(&mut contract, vec![update_alice], vec![]).unwrap();
-            let result = InkVotingGroup::get_member(&contract, accounts.alice).unwrap();
-            let total_voting_power = InkVotingGroup::get_total_weight(&contract);
+            InkGroupSimple::update_members(&mut contract, vec![update_alice], vec![]).unwrap();
+            let result = InkGroupSimple::get_member(&contract, accounts.alice).unwrap();
+            let total_voting_power = InkGroupSimple::get_total_weight(&contract);
             assert_eq!(result.weight, 2);
             assert_eq!(total_voting_power, 3);
-            InkVotingGroup::update_members(&mut contract, vec![charlie_member], vec![]).unwrap();
-            let result = InkVotingGroup::get_members(&contract).unwrap();
-            let total_voting_power = InkVotingGroup::get_total_weight(&contract);
+            InkGroupSimple::update_members(&mut contract, vec![charlie_member], vec![]).unwrap();
+            let result = InkGroupSimple::get_members(&contract).unwrap();
+            let total_voting_power = InkGroupSimple::get_total_weight(&contract);
             assert_eq!(result.len(), 3);
             assert_eq!(total_voting_power, 4);
-            InkVotingGroup::update_members(&mut contract, vec![], vec![accounts.alice]).unwrap();
-            let result = InkVotingGroup::get_members(&contract).unwrap();
-            let total_voting_power = InkVotingGroup::get_total_weight(&contract);
+            InkGroupSimple::update_members(&mut contract, vec![], vec![accounts.alice]).unwrap();
+            let result = InkGroupSimple::get_members(&contract).unwrap();
+            let total_voting_power = InkGroupSimple::get_total_weight(&contract);
             assert_eq!(result.len(), 2);
             assert_eq!(total_voting_power, 2);
             let err_response =
-                InkVotingGroup::update_members(&mut contract, vec![bob_member, bob_member], vec![])
+                InkGroupSimple::update_members(&mut contract, vec![bob_member, bob_member], vec![])
                     .unwrap_err();
             assert_eq!(
                 err_response,
@@ -325,7 +382,7 @@ mod contract {
 
     #[cfg(all(test, feature = "e2e-tests"))]
     mod e2e_tests {
-        use super::InkVotingGroupRef;
+        use super::InkGroupSimpleRef;
         use ink_e2e::build_message;
         type E2EResult<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
@@ -341,7 +398,7 @@ mod contract {
             };
 
             let members = vec![alice_member, bob_member];
-            let constructor = InkVotingGroupRef::try_new(None, members);
+            let constructor = InkGroupSimpleRef::try_new(None, members);
             let contract_addr = client
                 .instantiate("ink_voting_group", &ink_e2e::alice(), constructor, 0, None)
                 .await
