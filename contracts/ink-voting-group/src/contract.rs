@@ -322,4 +322,32 @@ mod contract {
             );
         }
     }
+
+    #[cfg(all(test, feature = "e2e-tests"))]
+    mod e2e_tests {
+        use super::InkVotingGroupRef;
+        use ink_e2e::build_message;
+        type E2EResult<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+
+        #[ink_e2e::test]
+        async fn e2e_can_add_members(mut client: ink_e2e::Client<C, E>) -> E2EResult<()> {
+            let alice_member = Member {
+                addr: ink_e2e::alice(),
+                weight: 1,
+            };
+            let bob_member = Member {
+                addr: ink_e2e::bob(),
+                weight: 1,
+            };
+
+            let members = vec![alice_member, bob_member];
+            let constructor = InkVotingGroupRef::try_new(None, members);
+            let contract_addr = client
+                .instantiate("ink_voting_group", &ink_e2e::alice(), constructor, 0, None)
+                .await
+                .expect("Instantiate failed")
+                .account_id;
+            Ok(())
+        }
+    }
 }

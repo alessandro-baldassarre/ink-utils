@@ -18,8 +18,8 @@ scale-info = { version = "2.3", default-features = false, features = ["derive"],
 ink-group  = { path = "../../traits/ink-group/", default-features = false }
 thiserror-no-std = { version = "2.0.2" }
 
-[dev-dependecies]
-ink_e2e = { package = "ink_e2e", git = "https://github.com/paritytech/ink" } 
+[dev-dependencies]
+ink_e2e = { version = "4.0.0-rc" } 
 
 [features]
 default = ["std"]
