@@ -205,7 +205,9 @@ mod contract {
     #[cfg(test)]
     mod tests {
         use super::*;
-        use ink::env::test;
+        use ink::env::test::{self, EmittedEvent};
+
+        type Event = <InkGroupSimple as ::ink::reflect::ContractEventBase>::Type;
 
         // Integration test setup
 
@@ -236,6 +238,15 @@ mod contract {
             InkGroupSimple::try_new(None, members).unwrap()
         }
 
+        fn decode_events(emittend_events: Vec<EmittedEvent>) -> Vec<Event> {
+            emittend_events
+                .into_iter()
+                .map(|event| {
+                    <Event as scale::Decode>::decode(&mut &event.data[..]).expect("invalid data")
+                })
+                .collect()
+        }
+
         #[ink::test]
         /// The default constructor does its job.
         fn construction_works() {
@@ -254,6 +265,14 @@ mod contract {
             };
             let members = vec![alice_member, bob_member];
             let contract = build_contract();
+
+            let emittend_events: Vec<EmittedEvent> = ink::env::test::recorded_events().collect();
+            let decoded_events = decode_events(emittend_events);
+            if let Event::MemberAddition(MemberAddition { member }) = decoded_events[0] {
+                assert_eq!(member, accounts.alice);
+            } else {
+                panic!("encountered unexpected event kind: expected a MemberAddition event")
+            }
 
             assert_eq!(contract.members.len(), 2);
             assert_eq!(contract.admin.get().unwrap(), accounts.alice);
@@ -329,6 +348,18 @@ mod contract {
             set_caller(accounts.alice);
             InkGroupSimple::update_admin(&mut contract, accounts.bob).unwrap();
             assert_eq!(contract.admin.get().unwrap(), accounts.bob);
+            let emittend_events: Vec<EmittedEvent> = ink::env::test::recorded_events().collect();
+            let decoded_events = decode_events(emittend_events);
+            if let Event::AdminUpdate(AdminUpdate {
+                old_admin,
+                new_admin,
+            }) = decoded_events[2]
+            {
+                assert_eq!(old_admin, accounts.alice);
+                assert_eq!(new_admin, accounts.bob);
+            } else {
+                panic!("encountered unexpected event kind: expected a MemberAddition event")
+            }
         }
 
         #[ink::test]
@@ -377,6 +408,23 @@ mod contract {
                     member: accounts.bob
                 }
             );
+            let emittend_events: Vec<EmittedEvent> = ink::env::test::recorded_events().collect();
+            let decoded_events = decode_events(emittend_events);
+            if let Event::MemberUpdate(MemberUpdate { member }) = decoded_events[2] {
+                assert_eq!(member, accounts.alice);
+            } else {
+                panic!("encountered unexpected event kind: expected a MemberAddition event")
+            }
+            if let Event::MemberAddition(MemberAddition { member }) = decoded_events[3] {
+                assert_eq!(member, accounts.charlie);
+            } else {
+                panic!("encountered unexpected event kind: expected a MemberAddition event")
+            }
+            if let Event::MemberRemoval(MemberRemoval { member }) = decoded_events[4] {
+                assert_eq!(member, accounts.alice);
+            } else {
+                panic!("encountered unexpected event kind: expected a MemberAddition event")
+            }
         }
     }
 
