@@ -76,4 +76,3 @@ Enum of errors that the messages may response with:
 | `member:AccountId`      | `DuplicateMember` | Entered duplicate member |
 |       | `ZeroMembers` | No member entered |
 |       | `NoMember` | Member not found |
-
