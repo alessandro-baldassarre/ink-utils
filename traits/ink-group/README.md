@@ -1,7 +1,7 @@
 
 # Ink-Group Spec
 
-Ink-Group is a trait that implement the spec for a basic implementation of a group membership. It can be combinaned with other implementation for example a multisigs.
+Specification for a basic implementation of a group membership. It can be combinaned with other implementation for example a multisigs.
 The main purpose of this specification is to create a group of members managed by an admin to be used as a basis in other implementations.
 
 ## Storage Struct
