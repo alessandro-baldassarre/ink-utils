@@ -4,8 +4,8 @@ version       = "0.1.0"
 authors       = ["Alessandro Baldassarre <alessandro.baldassarre.dev@gmail.com>"]
 edition       = "2021"
 license       = "UNLICENSED"
-repository    = "https://github.com/alessandro-baldassarre/ink-utils"
-documentation = "https://github.com/alessandro-baldassarre/ink-utils#readme"
+repository    = "https://github.com/alessandro-baldassarre/ink-utils/contracts/ink-group-simple"
+documentation = "https://github.com/alessandro-baldassarre/ink-utils/contracts/ink-group-simple#readme"
 keywords      = ["blockchain", "polkadot", "ink"]
 
 [lib]

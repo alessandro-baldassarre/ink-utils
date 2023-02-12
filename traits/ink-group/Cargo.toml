@@ -4,8 +4,8 @@ version       = "0.1.0"
 authors       = ["Alessandro Baldassarre <alessandro.baldassarre.dev@gmail.com>"]
 edition       = "2021"
 license       = "UNLICENSED"
-repository    = "https://github.com/alessandro-baldassarre/builDao"
-documentation = "https://github.com/alessandro-baldassarre/builDao#readme"
+repository    = "https://github.com/alessandro-baldassarre/ink-utils/traits/ink-group"
+documentation = "https://github.com/alessandro-baldassarre/ink-utils/traits/ink-group#readme"
 keywords      = ["blockchain", "polkadot", "ink"]
 
 [lib]
