@@ -9,17 +9,19 @@ documentation = "https://github.com/alessandro-baldassarre/ink-utils/contracts/i
 keywords      = ["blockchain", "polkadot", "ink"]
 
 [lib]
+name = "ink_group_simple"
+path = "contract.rs"
 crate-type = ["cdylib"]
 
 [dependencies]
-ink        = { version = "4.0.0-rc", default-features = false }
-scale      = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
-scale-info = { version = "2.3", default-features = false, features = ["derive"], optional = true }
+ink        = { version = "4.0.0", default-features = false }
+scale      = { package = "parity-scale-codec", version = "3.4.0", default-features = false, features = ["derive"] }
+scale-info = { version = "2.3.1", default-features = false, features = ["derive"], optional = true }
 ink-group  = { path = "../../traits/ink-group/", default-features = false }
 thiserror-no-std = { version = "2.0.2" }
 
 [dev-dependencies]
-ink_e2e = { version = "4.0.0-rc" } 
+ink_e2e = { version = "4.0.0" } 
 
 [features]
 default = ["std"]

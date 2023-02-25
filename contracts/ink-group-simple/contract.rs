@@ -1,11 +1,14 @@
+#![cfg_attr(not(feature = "std"), no_std)]
+mod error;
+mod helpers;
+
 #[ink::contract]
-mod contract {
+mod ink_group_simple {
     use ink::prelude::vec::Vec;
     use ink::storage::Lazy;
     use ink_group::{InkGroup, InkGroupError, Member};
 
     use crate::{ensure, error::ContractError, helpers::validate_unique_members};
-
     /// Emitted when a member is added to the group
     #[ink(event)]
     pub struct MemberAddition {
@@ -430,28 +433,56 @@ mod contract {
 
     #[cfg(all(test, feature = "e2e-tests"))]
     mod e2e_tests {
-        use super::InkGroupSimpleRef;
+
+        use super::*;
         use ink_e2e::build_message;
         type E2EResult<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
         #[ink_e2e::test]
         async fn e2e_can_add_members(mut client: ink_e2e::Client<C, E>) -> E2EResult<()> {
             let alice_member = Member {
-                addr: ink_e2e::alice(),
+                addr: ink_e2e::account_id(ink_e2e::AccountKeyring::Alice),
                 weight: 1,
             };
             let bob_member = Member {
-                addr: ink_e2e::bob(),
+                addr: ink_e2e::account_id(ink_e2e::AccountKeyring::Bob),
                 weight: 1,
             };
 
             let members = vec![alice_member, bob_member];
             let constructor = InkGroupSimpleRef::try_new(None, members);
             let contract_addr = client
-                .instantiate("ink_voting_group", &ink_e2e::alice(), constructor, 0, None)
+                .instantiate("ink-group-simple", &ink_e2e::alice(), constructor, 0, None)
                 .await
                 .expect("Instantiate failed")
                 .account_id;
+
+            let update_alice = Member {
+                addr: ink_e2e::account_id(ink_e2e::AccountKeyring::Alice),
+                weight: 2,
+            };
+
+            let update_members = build_message::<InkGroupSimpleRef>(contract_addr.clone()).call(
+                |ink_group_simple| ink_group_simple.update_members(vec![update_alice], vec![]),
+            );
+
+            client
+                .call(&ink_e2e::alice(), update_members, 0, None)
+                .await
+                .unwrap();
+
+            let get_member = build_message::<InkGroupSimpleRef>(contract_addr.clone()).call(
+                |ink_group_simple| {
+                    ink_group_simple.get_member(ink_e2e::account_id(ink_e2e::AccountKeyring::Alice))
+                },
+            );
+
+            let result = client
+                .call_dry_run(&ink_e2e::alice(), &get_member, 0, None)
+                .await;
+
+            assert_eq!(result.return_value().unwrap(), update_alice);
+
             Ok(())
         }
     }
